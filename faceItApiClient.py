@@ -1,24 +1,29 @@
+import json
 import os
 import pandas as pd
 import requests
 
 # Faceit API Key (ersetze mit deinem Key)
-API_KEY = "xxxxx"
-HEADERS = {"Authorization": f"Bearer {API_KEY}"}
-CSV_FILE = "faceit_match_data.csv"
-player_id = "xxxx"  # Ersetze mit Faceit Player-ID
+
+
 
 class FaceItApiClient:
     def __init__(self):
-        pass
+        with open("config.json", 'r', encoding='utf-8') as file:
+                config = json.load(file)
+
+        self.API_KEY = config["apiKey"]
+        self.STEAM_ID = config["steamId"]
+        self.HEADERS = {"Authorization": f"Bearer {self.API_KEY}"}
+        self.CSV_FILE = "faceit_match_data.csv"
 
     def calculateWinProbability(self):
-        data = pd.read_csv(CSV_FILE)
+        data = pd.read_csv(self.CSV_FILE)
         pass
     
 
     def getMatchHistory(self):
-        data = self.get_player_stats(player_id)
+        data = self.get_player_stats(self.STEAM_ID)
         print(data)
 
         if data:
@@ -27,7 +32,7 @@ class FaceItApiClient:
 
             self.update_csv(df) #Write CSV File
 
-            csvData = pd.read_csv(CSV_FILE) # Read CSV File
+            csvData = pd.read_csv(self.CSV_FILE) # Read CSV File
             
             print(csvData)
             
@@ -40,9 +45,9 @@ class FaceItApiClient:
             return df
 
     # Funktion zum Abrufen der CS2-Spielstatistiken eines Spielers
-    def get_player_stats(self, player_id, limit=100):
-        url = f"https://open.faceit.com/data/v4/players/{player_id}/games/cs2/stats?limit={limit}"
-        response = requests.get(url, headers=HEADERS)
+    def get_player_stats(self, steam_id, limit=100):
+        url = f"https://open.faceit.com/data/v4/players/{steam_id}/games/cs2/stats?limit={limit}"
+        response = requests.get(url, headers=self.HEADERS)
         if response.status_code != 200:
             print(f"Error: {response.status_code}, {response.text}")
             return None
@@ -74,13 +79,13 @@ class FaceItApiClient:
     
     # Funktion zum Speichern oder Aktualisieren der CSV-Datei
     def update_csv(self, new_data):
-        if os.path.exists(CSV_FILE):
-            existing_data = pd.read_csv(CSV_FILE)
+        if os.path.exists(self.CSV_FILE):
+            existing_data = pd.read_csv(self.CSV_FILE)
             combined_data = pd.concat([existing_data, new_data]).drop_duplicates(subset=["Match ID"])
         else:
             combined_data = new_data
 
-        combined_data.to_csv(CSV_FILE, index=False)
+        combined_data.to_csv(self.CSV_FILE, index=False)
         print(f"CSV-Datei aktualisiert: {len(combined_data)} Matches gespeichert.")
 
 def main():
